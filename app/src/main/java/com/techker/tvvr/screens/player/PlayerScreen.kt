@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -59,6 +60,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun PlayerScreen(
     navController: NavController,
+    programInfo:String,
     videoUrl: String = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
 ) {
     val context = LocalContext.current
@@ -155,6 +157,9 @@ fun PlayerScreen(
                         contentDescription = "Back",
                         tint = Color.White
                     )
+                }
+                Row(modifier = Modifier.padding(start = 80.dp,top = 30.dp)) {
+                    Text(programInfo, modifier = Modifier, color = Color.Black)
                 }
 
                 // Player Controls

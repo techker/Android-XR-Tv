@@ -76,7 +76,7 @@ fun AppNav(
         composable("player/{channelId}/{startTime}") { backStackEntry ->
             val channelId = backStackEntry.arguments?.getString("channelId")
             val startTime = backStackEntry.arguments?.getString("startTime")
-            PlayerScreen(navController)
+            PlayerScreen(navController, channelId.toString())
         }
     }
 }

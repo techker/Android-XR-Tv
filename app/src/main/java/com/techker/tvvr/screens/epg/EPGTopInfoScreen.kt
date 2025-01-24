@@ -407,8 +407,8 @@ fun EPGTopInfoScreen(navController: NavController) {
                                                 }
                                             }
                                             .border(
-                                                width = 1.dp,
-                                                color = if (isFocused) Color.White else Color.Transparent
+                                                width = if (isClicked) 2.dp else 1.dp,
+                                                color = if (isFocused || isClicked) MaterialTheme.colorScheme.primary else Color.Transparent
                                             )
                                             .focusable()
                                             .background(
@@ -425,11 +425,12 @@ fun EPGTopInfoScreen(navController: NavController) {
                                             )
                                             .clickable {
                                                 isClicked = true
-                                                val programId =
-                                                    "${channel.id}_${program.title}_${program.startTime}"
+                                                val programId = "${channel.id}_${program.title}_${program.startTime}"
+                                                // Shows info on player when clicked, can show more details like Channel, Program Duration...
+                                                val programInfo = "${program.title}"
                                                 if (clickedPrograms.value.contains(programId)) {
                                                     // Second click - navigate to player
-                                                    navController.navigate("player/${channel.id}/${program.startTime}")
+                                                    navController.navigate("player/${programInfo}/${program.startTime}")
                                                 } else {
                                                     // First click - show details
                                                     clickedPrograms.value += programId
@@ -445,13 +446,17 @@ fun EPGTopInfoScreen(navController: NavController) {
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Row(
+                                        Column(
                                             modifier = Modifier
-                                                .fillMaxWidth()
+                                                .fillMaxSize()
                                                 .padding(4.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = if (isClicked) Arrangement.Start else Arrangement.SpaceBetween
+                                            verticalArrangement = Arrangement.SpaceBetween
                                         ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = if (isClicked) Arrangement.Start else Arrangement.SpaceBetween
+                                            ) {
                                                 // Program title and time
                                                 Text(
                                                     text = if (program.title == "No Program") {
@@ -516,6 +521,21 @@ fun EPGTopInfoScreen(navController: NavController) {
                                                         }
                                                     }
                                                 }
+                                            }
+
+                                            // Add "Click to Watch" text when program is selected
+                                            if (clickedPrograms.value.contains("${channel.id}_${program.title}_${program.startTime}")) {
+                                                Text(
+                                                    text = "Click to Watch",
+                                                    color = Color.White,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    textAlign = TextAlign.Center,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                                                        .padding(vertical = 2.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
