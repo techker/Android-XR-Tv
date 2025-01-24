@@ -1,8 +1,8 @@
 package com.techker.tvvr.screens.home
 
-import androidx.compose.animation.core.animate
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
@@ -13,28 +13,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
-import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,11 +42,12 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
+import com.techker.tvvr.data.Channel
 import com.techker.tvvr.data.MockData.homePageCarouselItems
-import com.techker.tvvr.screens.navigation.NavigationTopBar
 import com.techker.tvvr.data.MockData.sampleMovies
 import com.techker.tvvr.data.Movie
-import kotlinx.coroutines.delay
+import com.techker.tvvr.screens.navigation.NavigationTopBar
+import com.techker.tvvr.widgets.AutoScrollingCarousel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,35 +56,18 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val lazyListState = rememberLazyListState()
-    val carouselState = rememberCarouselState { homePageCarouselItems.size.coerceAtLeast(1) }
-    var currentIndex by remember { mutableStateOf(0) }
-    
-    // Add auto-scroll effect
-    LaunchedEffect(Unit) {
-        while(true) {
-            delay(5000) // Wait 5 seconds between scrolls
-            currentIndex = (currentIndex + 1) % homePageCarouselItems.size
-            carouselState.apply {
-                scroll { currentIndex.toFloat() }
-            }
-        }
-    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.DarkGray)
     ) {
-        NavigationTopBar(
-            navController = navController,
-            onAvatarClick = {
-                navController.navigate("profile")
-            }
-        )
 
         LazyColumn(
             state = lazyListState,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 80.dp) // Add padding for the NavigationTopBar
         ) {
             // Carousel section
             item {
@@ -98,17 +75,21 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(400.dp)
-                        .padding(top = 80.dp, start = 16.dp, end = 16.dp)
+                        .padding(top = 16.dp)
                 ) {
-                    HorizontalUncontainedCarousel(
-                        state = carouselState,
-                        itemWidth = (LocalConfiguration.current.screenWidthDp - 32).dp,
+                    AutoScrollingCarousel(
+                        items = homePageCarouselItems,
+                        itemWidth = LocalConfiguration.current.screenWidthDp.dp - 32.dp, // Full width minus padding
                         itemSpacing = 16.dp,
-                        contentPadding = PaddingValues(horizontal = 8.dp)
-                    ) { index ->
+                        contentPadding = PaddingValues(horizontal = 16.dp)
+                    ) { item ->
                         CarouselItemContent(
-                            item = homePageCarouselItems[index],
-                            onClick = { /* Handle click */ }
+                            item = item,
+                            onClick = {
+                                navController.navigate("content/${item.id}") {
+                                    launchSingleTop = true
+                                }
+                            }
                         )
                     }
                 }
@@ -176,74 +157,17 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
-    }
-}
 
-@Composable
-fun HomeScreenContent(){
-    val sampleMovies = sampleMovies
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .background(Color.DarkGray)
-            .padding(16.dp)
-    ) {
-        item {
-            Text(
-                text = "What's New",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Start,
-                color = Color.White,
-                modifier = Modifier.padding(start = 25.dp, bottom = 10.dp)
-            )
-
-            MoviesCarousel(
-                movies = sampleMovies,
-                onMovieClick = {
-                    //movieId ->
-                    // navController.navigate("content/$movieId")
+        // Place NavigationTopBar last so it's always on top
+        NavigationTopBar(
+            navController = navController,
+            onAvatarClick = {
+                navController.navigate("profile") {
+                    launchSingleTop = true
+                    restoreState = true
                 }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Continue Watching",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Start,
-                color = Color.White,
-                modifier = Modifier.padding(start = 25.dp, bottom = 10.dp)
-            )
-
-
-            ContinueMoviesCarousel(
-                movies = sampleMovies,
-                onMovieClick = {
-                    //movieId ->
-                    // navController.navigate("content/$movieId")
-                }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Top Tv Channels",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Start,
-                color = Color.White,
-                modifier = Modifier.padding(start = 25.dp, bottom = 10.dp)
-            )
-
-            TvChannelsCarousel(
-                movies = sampleMovies,
-                onMovieClick = {
-                    //movieId ->
-                    // navController.navigate("content/$movieId")
-                }
-            )
-        }
+            },
+        )
     }
 }
 
@@ -361,6 +285,27 @@ fun TvChannelsCarousel(
 }
 
 @Composable
+fun ChannelRow(
+    channels: List<Channel>,
+    onChannelClick: (Channel) -> Unit
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(channels) { channel ->
+            ChannelIcon(
+                channel = channel,
+                onClick = { 
+                    onChannelClick(channel)
+                }
+            )
+        }
+    }
+}
+
+
+@Composable
 private fun CarouselItemContent(
     item: Movie,
     onClick: () -> Unit
@@ -370,7 +315,7 @@ private fun CarouselItemContent(
             .fillMaxWidth()
             .height(400.dp)
             .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick)
+            .clickable { onClick() }
     ) {
         AsyncImage(
             model = item.posterUri,
@@ -405,6 +350,38 @@ private fun CarouselItemContent(
                 .align(Alignment.BottomStart)
                 .padding(16.dp)
         )
+    }
+}
+
+@Composable
+fun ChannelIcon(
+    channel: Channel,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .size(72.dp) // Icon size
+            .clickable(onClick = onClick)
+    ) {
+        Image(
+            painter = rememberAsyncImagePainter(model = channel.logo),
+            contentDescription = channel.name,
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape) // Makes the icon round
+                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape) // Optional border
+                .background(MaterialTheme.colorScheme.surface) // Optional background
+        )
+//        Spacer(modifier = Modifier.height(4.dp))
+//        Text(
+//            text = channel.name,
+//            style = MaterialTheme.typography.bodySmall,
+//            textAlign = TextAlign.Center,
+//            maxLines = 1,
+//            overflow = TextOverflow.Ellipsis
+//        )
     }
 }
 

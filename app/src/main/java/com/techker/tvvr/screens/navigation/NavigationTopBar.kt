@@ -1,5 +1,6 @@
 package com.techker.tvvr.screens.navigation
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Preview
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -42,20 +44,53 @@ fun NavigationTopBar(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(start = 16.dp)
         ) {
-            IconButton(onClick = { navController.navigate("home") }) {
+            IconButton(
+                onClick = {
+                    Log.d("Navigation", "Home clicked")
+                    try {
+                        navController.navigate("home") {
+                            launchSingleTop = true
+                            popUpTo(navController.graph.startDestinationId)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Navigation", "Failed to navigate to home", e)
+                    }
+                }
+            ) {
                 Icon(Icons.Default.Home, "Home", tint = Color.White)
             }
-            IconButton(onClick = { navController.navigate("liveTv") }) {
+            IconButton(
+                onClick = {
+                    Log.d("Navigation", "EPG clicked")
+                    try {
+                        navController.navigate("liveTv")
+                    } catch (e: Exception) {
+                        Log.e("Navigation", "Failed to navigate to epg", e)
+                    }
+                }
+            ) {
                 Icon(Icons.Default.LiveTv, "Live TV", tint = Color.White)
             }
-            IconButton(onClick = { navController.navigate("dashboard") }) {
-                Icon(Icons.Default.Dashboard, "Dashboard", tint = Color.White)
+            IconButton(
+                onClick = {
+                    Log.d("Navigation", "Vod clicked")
+                    try {
+                        //navController.navigate("dashboard")
+                    } catch (e: Exception) {
+                        Log.e("Navigation", "Failed to navigate to vod", e)
+                    }
+                }
+            ) {
+                Icon(Icons.Default.Preview, "VOD", tint = Color.White)
             }
         }
 
         // Profile button
         IconButton(
-            onClick = onAvatarClick,
+            onClick = {
+                Log.d("Navigation", "Profile clicked")
+                onAvatarClick()
+            },
             modifier = Modifier.padding(end = 16.dp)
         ) {
             Icon(Icons.Default.Person, "Profile", tint = Color.White)
@@ -73,5 +108,4 @@ fun NavigationTopBar(
 fun ShowNavPreview() {
     val navController = rememberNavController()
     NavigationTopBar(navController) {}
-   // HomeScreen(navController = navController)
 }

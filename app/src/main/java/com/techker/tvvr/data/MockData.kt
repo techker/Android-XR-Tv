@@ -230,6 +230,10 @@ object MockData {
         Movie("5", "https://i.ebayimg.com/images/g/9PcAAOSwIpFhz5a3/s-l1200.jpg", "The Batman", "Robert Pattinson"),
     )
 
+    val recentChannels = listOf(
+        channels
+    )
+
     /**
      * Functions for EPG
      */

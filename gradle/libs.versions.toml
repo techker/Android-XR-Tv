@@ -24,8 +24,10 @@ openxr ="1.1.43"
 icons ="1.7.6"
 meta-horizon = "71"
 xrCore = "1.0.0-alpha01"
+compose-for-tv = "1.0.0-alpha12"
+tv-material ="1.1.0-alpha01"
 
-
+foundation = "1.5.0"
 [libraries]
 
 #AR Core
@@ -49,6 +51,10 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 material-icons= { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "icons" }
+androidx-tv-material ={ group = "androidx.tv", name = "tv-material", version.ref = "tv-material" }
+androidx-tv-foundation ={ group = "androidx.tv", name = "tv-foundation", version.ref = "compose-for-tv" }
+androidx-foundation ={ group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+
 
 #Extras
 io-coil-compose= { group = "io.coil-kt", name = "coil-compose", version.ref = "coil-comp" }
