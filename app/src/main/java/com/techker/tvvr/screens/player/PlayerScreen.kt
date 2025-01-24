@@ -1,5 +1,7 @@
 package com.techker.tvvr.screens.player
 
+import android.view.ViewGroup.LayoutParams
+import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,6 +30,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,15 +46,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.apply
-import kotlin.text.toLong
 
+@OptIn(UnstableApi::class)
 @Composable
 fun PlayerScreen(
     navController: NavController,
@@ -66,27 +70,29 @@ fun PlayerScreen(
     
     // Initialize Media3 ExoPlayer
     val player = remember {
-        ExoPlayer.Builder(context)
-            .build()
-            .apply {
-                setMediaItem(MediaItem.fromUri(videoUrl))
-                prepare()
-                playWhenReady = true
-                addListener(object : Player.Listener {
-                    override fun onPlaybackStateChanged(state: Int) {
-                        if (state == Player.STATE_READY) {
-                            isPlaying = playWhenReady
-                        }
-                    }
-                })
-            }
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(videoUrl))
+            repeatMode = Player.REPEAT_MODE_OFF
+            playWhenReady = true
+            prepare()
+        }
     }
 
     // Clean up player when leaving the screen
-    DisposableEffect(Unit) {
+    DisposableEffect(key1 = player) {
         onDispose {
             controlsTimer?.cancel()
             player.release()
+        }
+    }
+
+    // Update playback position
+    LaunchedEffect(player) {
+        while (true) {
+            delay(1000)
+            if (player.duration > 0) {
+                playbackPosition = player.currentPosition.toFloat() / player.duration.toFloat()
+            }
         }
     }
 
@@ -111,6 +117,11 @@ fun PlayerScreen(
                 PlayerView(ctx).apply {
                     this.player = player
                     useController = false
+                    layoutParams = LayoutParams(
+                        LayoutParams.MATCH_PARENT,
+                        LayoutParams.MATCH_PARENT
+                    )
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
                 }
             },
             modifier = Modifier.fillMaxSize()
@@ -120,12 +131,20 @@ fun PlayerScreen(
         AnimatedVisibility(
             visible = showControls,
             enter = fadeIn(),
-            exit = fadeOut()
+            exit = fadeOut(),
+            modifier = Modifier.fillMaxSize()
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+            ) {
                 // Back button
                 FilledTonalIconButton(
-                    onClick = { navController.navigateUp() },
+                    onClick = { 
+                        player.stop()
+                        navController.navigateUp() 
+                    },
                     modifier = Modifier
                         .padding(16.dp)
                         .size(56.dp)
@@ -143,8 +162,7 @@ fun PlayerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
-                        .padding(16.dp)
-                        .background(Color.Black.copy(alpha = 0.5f)),
+                        .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Progress Bar with blue color
@@ -169,12 +187,10 @@ fun PlayerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Rewind button
-                        IconButton(
-                            onClick = {
-                                val newPosition = player.currentPosition - 10_000 // 10 seconds
-                                player.seekTo(kotlin.comparisons.maxOf(0, newPosition))
-                            }
-                        ) {
+                        IconButton(onClick = {
+                            val newPosition = player.currentPosition - 10_000
+                            player.seekTo(maxOf(0, newPosition))
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.Replay10,
                                 contentDescription = "Rewind 10 seconds",
@@ -183,12 +199,10 @@ fun PlayerScreen(
                         }
 
                         // Play/Pause Button
-                        IconButton(
-                            onClick = {
-                                isPlaying = !isPlaying
-                                if (isPlaying) player.play() else player.pause()
-                            }
-                        ) {
+                        IconButton(onClick = {
+                            isPlaying = !isPlaying
+                            player.playWhenReady = isPlaying
+                        }) {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                 contentDescription = if (isPlaying) "Pause" else "Play",
@@ -198,12 +212,10 @@ fun PlayerScreen(
                         }
 
                         // Fast Forward button
-                        IconButton(
-                            onClick = {
-                                val newPosition = player.currentPosition + 10_000 // 10 seconds
-                                player.seekTo(minOf(player.duration, newPosition))
-                            }
-                        ) {
+                        IconButton(onClick = {
+                            val newPosition = player.currentPosition + 10_000
+                            player.seekTo(minOf(player.duration, newPosition))
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.Forward10,
                                 contentDescription = "Forward 10 seconds",
@@ -221,6 +233,7 @@ fun PlayerScreen(
 @Composable
 fun PlayerScreenPreview() {
     Surface(
+        
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(16f / 9f),
