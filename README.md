@@ -24,7 +24,7 @@ Added API Key in Constants  ->  const val TMDB_API_KEY = "YOUR KEY"
 ![screenshot](vod_page.png)
 
 #### VOD Movie Details with Preview Trailer from TMDB
-![screenshot](vod_details.png)
+![screenshot](top_menu_vod_details.png)
 
 ###  Player
 #### Player controls and full mode on click shows controls and back button
