@@ -207,7 +207,7 @@ object MockData {
                 )
             )
         )
-//https://via.placeholder.com/200x300
+
     val sampleMovies = listOf(
         Movie("1", "https://blog.icons8.com/wp-content/uploads/old-uploads/2019/05/poster-for-movie.png", "Movie 1", "Description"),
         Movie("2", "https://lh3.googleusercontent.com/proxy/YFn3AAC_N_EcWBUODxGNyQpG6Kef8lqoonOLHsL7n7h-Bqsj8FWNEnGeDuBT5r38ITnMHNvVbIGpyfXRPXtQ4p_R5Bhjlg", "Movie 2", "Description"),
@@ -219,6 +219,49 @@ object MockData {
         Movie("8", "https://hips.hearstapps.com/hmg-prod/images/1988-beetlejuice-1525959351.png?crop=1xw:1xh;center,top&resize=980:*", "Movie 8", "Description"),
         Movie("9", "https://akm-img-a-in.tosshub.com/indiatoday/inline-images/GD8OhxNbcAAeo3o.jpg?VersionId=ZLxtIDN0p7stZbaw1oOX6vkBLUjvg8CQ&size=750:*", "Movie 9", "Description"),
         Movie("10", "https://yc.cldmlk.com/8pqs2df0vwxtfv9jwgzxeb5efm/uploads/vertical_12ac5bf3-a5d9-4f43-8777-8210cce8c236.jpg", "Movie 10", "Description"),
+
+    )
+    val sampleMoviesVod = listOf(
+        Movies(
+            id = "1",
+            name = "The Matrix",
+            description = "A computer programmer discovers a mysterious world beneath reality.",
+            posterUri = "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+            genres = listOf("Action", "Sci-Fi"),
+            rating = "R",
+            duration = 136,
+            releaseYear = 1999,
+            director = "Lana Wachowski",
+            cast = listOf("Keanu Reeves", "Laurence Fishburne", "Carrie-Anne Moss"),
+            streamingUrl = "https://example.com/stream/matrix",
+            trailerUrl = "https://example.com/trailer/matrix",
+            isFeatured = true
+        ),
+        Movies(
+            id = "2",
+            name = "Inception",
+            description = "A thief who steals corporate secrets through dream-sharing technology.",
+            posterUri = "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+            genres = listOf("Action", "Sci-Fi", "Thriller"),
+            rating = "PG-13",
+            duration = 148,
+            releaseYear = 2010,
+            director = "Christopher Nolan",
+            cast = listOf("Leonardo DiCaprio", "Joseph Gordon-Levitt", "Ellen Page"),
+            isNew = true
+        ),Movies(
+            id = "3",
+            name = "Inception",
+            description = "A thief who steals corporate secrets through dream-sharing technology.",
+            posterUri = "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+            genres = listOf("Action", "Sci-Fi", "Thriller"),
+            rating = "PG-13",
+            duration = 148,
+            releaseYear = 2010,
+            director = "Christopher Nolan",
+            cast = listOf("Leonardo DiCaprio", "Joseph Gordon-Levitt", "Ellen Page"),
+            isNew = true
+        ),
 
     )
 

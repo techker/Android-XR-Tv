@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.techker.tvvr.data.Movie
+import com.techker.tvvr.data.Movies
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -33,16 +33,17 @@ import kotlinx.coroutines.launch
  * 	•	Avoided dependency on potentially incomplete or restrictive APIs.
  * The original HorizontalUncontainedCarousel was likely a custom implementation or part of a library,
  * but its integration with the CarouselState caused type mismatches (e.g., LazyListState vs CarouselState).
- * The CarouselState API doesn’t include methods like animateScrollToItem or activeItemIndex in some cases, causing usability issues.
+ * The CarouselState API doesn't include methods like animateScrollToItem or activeItemIndex in some cases, causing usability issues.
  */
 @Composable
 fun AutoScrollingCarousel(
-    items: List<Movie>,
+    items: List<Movies>,
     modifier: Modifier = Modifier,
-    itemWidth: Dp = LocalConfiguration.current.screenWidthDp.dp - 32.dp, // Full-width posters
+    itemWidth: Dp = LocalConfiguration.current.screenWidthDp.dp - 32.dp,
     itemSpacing: Dp = 16.dp,
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp),
-    itemContent: @Composable (Movie) -> Unit
+    onItemClick: (Movies) -> Unit,
+    itemContent: @Composable (Movies) -> Unit
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()

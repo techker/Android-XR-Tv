@@ -8,21 +8,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LiveTv
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Preview
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.xr.compose.platform.LocalSession
+import com.techker.tvvr.R
 
 
 @Composable
@@ -30,6 +32,7 @@ fun NavigationTopBar(
     navController: NavController,
     onAvatarClick: () -> Unit = {}
 ) {
+    val session = LocalSession.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -75,14 +78,26 @@ fun NavigationTopBar(
                 onClick = {
                     Log.d("Navigation", "Vod clicked")
                     try {
-                        //navController.navigate("dashboard")
+                        navController.navigate("vod")
                     } catch (e: Exception) {
                         Log.e("Navigation", "Failed to navigate to vod", e)
                     }
                 }
             ) {
-                Icon(Icons.Default.Preview, "VOD", tint = Color.White)
+                Icon(Icons.Default.Movie, "VOD", tint = Color.White)
             }
+
+            IconButton(
+            onClick = { session?.requestFullSpaceMode() },
+            modifier = Modifier.padding(end = 16.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_full_space_mode_switch),
+                tint = Color.White,
+                contentDescription = null
+            )
+        }
+
         }
 
         // Profile button
@@ -91,12 +106,14 @@ fun NavigationTopBar(
                 Log.d("Navigation", "Profile clicked")
                 onAvatarClick()
             },
-            modifier = Modifier.padding(end = 16.dp)
+            modifier = Modifier.padding(end = 26.dp)
         ) {
             Icon(Icons.Default.Person, "Profile", tint = Color.White)
         }
+
     }
 }
+
 
 @Preview(
     name = "Navigation Preview",

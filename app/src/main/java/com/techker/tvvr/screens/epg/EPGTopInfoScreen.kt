@@ -1,6 +1,9 @@
 package com.techker.tvvr.screens.epg
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +23,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -45,8 +50,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.SpatialPanel
+import androidx.xr.compose.subspace.SpatialRow
+import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.movable
+import androidx.xr.compose.subspace.layout.offset
+import androidx.xr.compose.subspace.layout.resizable
+import androidx.xr.compose.subspace.layout.rotate
+import androidx.xr.compose.subspace.layout.width
+import androidx.xr.runtime.math.Quaternion
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.techker.tvvr.R
@@ -54,21 +72,23 @@ import com.techker.tvvr.data.MockData.channels
 import com.techker.tvvr.data.SelectedProgram
 import com.techker.tvvr.data.TimeSlot
 import com.techker.tvvr.screens.navigation.NavigationTopBar
+import kotlinx.coroutines.delay
 import java.time.LocalTime
-
 
 
 @SuppressLint("DefaultLocale")
 @Composable
 fun EPGTopInfoScreen(navController: NavController) {
+    var showSideDetails by remember { mutableStateOf(false) }
+    var selectedProgram by remember { mutableStateOf<SelectedProgram?>(null) }
     val clickedPrograms = remember { mutableStateOf<Set<String>>(setOf()) }
+    val isSpatialEnabled = LocalSpatialCapabilities.current.isSpatialUiEnabled
 
     // Get current time values
     val currentTime = remember { LocalTime.now() }
     val currentHour = remember { currentTime.hour }
     val currentMinute = remember { currentTime.minute }
     val currentTimeFloat = remember { currentHour + (currentMinute / 60f) }
-
     val channels = remember { channels }
 
     // Get current program for initial display
@@ -96,7 +116,6 @@ fun EPGTopInfoScreen(navController: NavController) {
 
     val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
-    var selectedProgram by remember { mutableStateOf(currentProgram) }
 
     // Calculate initial scroll position (current time)
     LaunchedEffect(Unit) {
@@ -122,6 +141,17 @@ fun EPGTopInfoScreen(navController: NavController) {
             )
         }
     }
+
+    // Add this to prevent the panel from auto-closing
+    LaunchedEffect(selectedProgram) {
+        if (selectedProgram != null) {
+            showSideDetails = true
+        }
+    }
+
+    // Add this state at the top of EPGTopInfoScreen
+    var currentlySelectedProgramId by remember { mutableStateOf<String?>(null) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -263,14 +293,12 @@ fun EPGTopInfoScreen(navController: NavController) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 50.dp)  // Same as header space
-                        .verticalScroll(verticalScrollState)  // Use same scroll state as program grid
-                        .background(Color.Black)
-                        .border(
-                            width = 1.dp,
-                            color = Color.DarkGray,
-                            shape = RoundedCornerShape(0.dp)
+                        .padding(top = 50.dp)
+                        .verticalScroll(
+                            state = verticalScrollState,
+                            enabled = !showSideDetails // Disable scroll when details are shown
                         )
+                        .background(Color.Black)
                 ) {
                     channels.forEach { channel ->
                         Box(
@@ -302,13 +330,16 @@ fun EPGTopInfoScreen(navController: NavController) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(start = 100.dp) // Offset for channel column
+                    .padding(start = 100.dp)
             ) {
                 // Fixed time header
                 Row(
                     modifier = Modifier
                         .height(50.dp)
-                        .horizontalScroll(horizontalScrollState)
+                        .horizontalScroll(
+                            state = horizontalScrollState,
+                            enabled = !showSideDetails // Disable scroll when details are shown
+                        )
                         .background(Color.Black)
                 ) {
                     timeSlots.forEach { slot ->
@@ -374,12 +405,18 @@ fun EPGTopInfoScreen(navController: NavController) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 50.dp) // Offset for time header
+                        .padding(top = 50.dp)
                 ) {
                     Column(
                         modifier = Modifier
-                            .horizontalScroll(horizontalScrollState)
-                            .verticalScroll(verticalScrollState)
+                            .horizontalScroll(
+                                state = horizontalScrollState,
+                                enabled = !showSideDetails // Disable scroll when details are shown
+                            )
+                            .verticalScroll(
+                                state = verticalScrollState,
+                                enabled = !showSideDetails // Disable scroll when details are shown
+                            )
                             .width(100.dp * (lastProgramEndHour * 2))
                     ) {
                         // Programs grid
@@ -400,23 +437,27 @@ fun EPGTopInfoScreen(navController: NavController) {
                                             .width(100.dp * (program.duration * 2))
                                             .fillMaxHeight()
                                             .padding(1.dp)
-                                            .onFocusChanged {
-                                                isFocused = it.isFocused
-                                                if (!it.isFocused) {
-                                                    isClicked = false
+                                            .onFocusChanged { focusState ->
+                                                isFocused = focusState.isFocused
+                                                if (!focusState.isFocused) {
+                                                    // Reset both click state and border when losing focus
+                                                    val programId = "${channel.id}_${program.title}_${program.startTime}"
+                                                    if (programId != currentlySelectedProgramId) {
+                                                        isClicked = false
+                                                    }
                                                 }
                                             }
                                             .border(
-                                                width = if (isClicked) 2.dp else 1.dp,
-                                                color = if (isFocused || isClicked) MaterialTheme.colorScheme.primary else Color.Transparent
+                                                width = if (currentlySelectedProgramId == "${channel.id}_${program.title}_${program.startTime}") 2.dp else 1.dp,
+                                                color = if (isFocused || currentlySelectedProgramId == "${channel.id}_${program.title}_${program.startTime}") 
+                                                    MaterialTheme.colorScheme.primary 
+                                                else 
+                                                    Color.Transparent
                                             )
                                             .focusable()
                                             .background(
                                                 when {
-                                                    program.title == "No Program" -> Color.DarkGray.copy(
-                                                        alpha = 0.3f
-                                                    )
-
+                                                    program.title == "No Program" -> Color.DarkGray.copy(alpha = 0.3f)
                                                     isPastProgram -> Color.DarkGray.copy(alpha = 0.7f)
                                                     isCurrentProgram -> MaterialTheme.colorScheme.secondary
                                                     else -> MaterialTheme.colorScheme.primary
@@ -424,24 +465,27 @@ fun EPGTopInfoScreen(navController: NavController) {
                                                 RoundedCornerShape(4.dp)
                                             )
                                             .clickable {
-                                                isClicked = true
                                                 val programId = "${channel.id}_${program.title}_${program.startTime}"
-                                                // Shows info on player when clicked, can show more details like Channel, Program Duration...
-                                                val programInfo = "${program.title}"
-                                                if (clickedPrograms.value.contains(programId)) {
-                                                    // Second click - navigate to player
-                                                    navController.navigate("player/${programInfo}/${program.startTime}")
+                                                if (programId == currentlySelectedProgramId) {
+                                                    // Second click - navigate and reset states
+                                                    showSideDetails = false
+                                                    currentlySelectedProgramId = null
+                                                    isClicked = false
+                                                    navController.navigate("player/${programId}/${program.startTime}")
                                                 } else {
-                                                    // First click - show details
-                                                    clickedPrograms.value += programId
+                                                    // First click - show details and update states
+                                                    currentlySelectedProgramId = programId
+                                                    isClicked = true
+                                                    clickedPrograms.value = setOf(programId)
                                                     selectedProgram = SelectedProgram(
                                                         title = program.title,
-                                                        description = "This is a sample description for ${program.title}. The show includes various interesting segments and entertainment content.",
+                                                        description = "This is a sample description for ${program.title}...",
                                                         rating = "TV-14",
-                                                        imageUrl = "",  // You can add actual image URL here
+                                                        imageUrl = "",
                                                         startTime = program.startTime,
                                                         endTime = program.startTime + program.duration
                                                     )
+                                                    showSideDetails = true
                                                 }
                                             },
                                         contentAlignment = Alignment.Center
@@ -522,9 +566,8 @@ fun EPGTopInfoScreen(navController: NavController) {
                                                     }
                                                 }
                                             }
-
-                                            // Add "Click to Watch" text when program is selected
-                                            if (clickedPrograms.value.contains("${channel.id}_${program.title}_${program.startTime}")) {
+                                            // Update the "Click to Watch" text visibility check
+                                            if (currentlySelectedProgramId == "${channel.id}_${program.title}_${program.startTime}") {
                                                 Text(
                                                     text = "Click to Watch",
                                                     color = Color.White,
@@ -545,8 +588,211 @@ fun EPGTopInfoScreen(navController: NavController) {
                 }
             }
         }
+
+    }
+    if (isSpatialEnabled && showSideDetails && selectedProgram != null) {
+        SpatialStateful(
+            selectedProgram = selectedProgram!!,
+            showDetails = showSideDetails
+        )
     }
 }
+
+@SuppressLint("DefaultLocale")
+private fun LazyListScope.programDetails(details: SelectedProgram) {
+    item {
+        Text(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f))
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            text = details.title,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            textAlign = TextAlign.Start,
+            fontSize = 32.sp
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+
+    item {
+        Box(
+            modifier = Modifier
+                .width(200.dp)
+                .height(250.dp)
+                .background(Color.DarkGray, RoundedCornerShape(4.dp))
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(
+                    model = details.imageUrl.ifEmpty { R.drawable.default_card }
+                ),
+                contentDescription = details.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+
+    item {
+        // Right side - Program details
+        Column(
+            modifier = Modifier
+                .padding(start = 16.dp)
+        ) {
+            // Title
+            Text(
+                text = details.title,
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Time and Rating
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = String.format(
+                        "%02d:%02d - %02d:%02d",
+                        details.startTime.toInt(),
+                        ((details.startTime % 1) * 60).toInt(),
+                        details.endTime.toInt(),
+                        ((details.endTime % 1) * 60).toInt()
+                    ),
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = details.rating,
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Description
+            Text(
+                text = details.description,
+                color = Color.White.copy(alpha = 0.8f),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun SpatialStateful(
+    selectedProgram: SelectedProgram,
+    showDetails: Boolean
+) {
+    var playDepthAnimation by remember { mutableStateOf(false) }
+    var playRotationAnimation by remember { mutableStateOf(false) }
+    
+    val depth by animateDpAsState(
+        targetValue = if(playDepthAnimation) FINAL_DEPTH else INITIAL_DEPTH,
+        animationSpec = tween(durationMillis = 3000)
+    )
+
+    val rotation by animateFloatAsState(
+        targetValue = if(playRotationAnimation) FINAL_ROTATION else INITIAL_ROTATION,
+        animationSpec = tween(durationMillis = 2000, delayMillis = 2000)
+    )
+
+    LaunchedEffect(showDetails) {
+        if (showDetails) {
+            playDepthAnimation = true
+            delay(1000)
+            playRotationAnimation = true
+        } else {
+            playRotationAnimation = false
+            delay(2000)
+            playDepthAnimation = false
+        }
+    }
+
+    Subspace {
+        SpatialRow(
+            modifier = SubspaceModifier
+                .width(3000.dp)  // Increased overall width
+                .height(1200.dp)  // Increased height
+                .offset(z = -200.dp)  // Moved closer to viewer
+        ) {
+            // Details Panel
+            SpatialPanel(
+                modifier = SubspaceModifier
+                    .width(1000.dp)    // Increased width
+                    .height(1000.dp)   // Increased height
+                    .offset(
+                        x = -1200.dp,  // Adjusted position
+                        y = 0.dp,
+                        z = depth
+                    )
+                    .rotate(Quaternion(y = 0.3f))
+                    .resizable()
+                    .movable(),
+                name = "EPGDetailsPanel",
+                content = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.9f))
+                            .padding(32.dp)  // Increased padding
+                    ) {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            programDetails(selectedProgram)
+                        }
+                    }
+                }
+            )
+
+            // Main EPG Panel
+            SpatialPanel(
+                modifier = SubspaceModifier
+                    .width(2000.dp)    // Increased width
+                    .height(1000.dp)   // Increased height
+                    .offset(
+                        x = 200.dp,    // Adjusted position
+                        y = 0.dp,
+                        z = depth
+                    )
+                    .rotate(Quaternion(y = rotation))
+                    .resizable()
+                    .movable(),
+                name = "MainEPGPanel",
+                content = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.DarkGray)
+                    ) {
+                        Text(
+                            text = "EPG Content",
+                            color = Color.White,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
+            )
+        }
+    }
+}
+
+// Update constants for better visibility
+private val INITIAL_DEPTH = 0.dp
+private val FINAL_DEPTH = -150.dp  // Adjusted depth
+private val INITIAL_ROTATION = 0f
+private val FINAL_ROTATION = 0.25f  // Adjusted rotation
 
 @Preview(
     showBackground = true,

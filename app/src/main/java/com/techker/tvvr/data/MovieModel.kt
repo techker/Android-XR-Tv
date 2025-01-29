@@ -7,6 +7,36 @@ data class Movie(
     val description: String
 )
 
+data class Movies(
+    val id: String,
+    val name: String,
+    val description: String,
+    val posterUri: String,
+    val genres: List<String>,
+    val rating: String,
+    val duration: Int, // in minutes
+    val releaseYear: Int,
+    val director: String,
+    val cast: List<String>,
+    val streamingUrl: String? = null,
+    val trailerUrl: String? = null,
+    val thumbnailUri: String? = null,
+    val isNew: Boolean = false,
+    val isFeatured: Boolean = false
+)
+data class Videos(
+    val iso_639_1:String?,
+    val iso_3166_1:String?,
+    val name:String,
+    val key:String,
+    val site:String,
+    val size:Long,
+    val type:String,
+    val official: Boolean = true,
+    val published_at:String,
+    val id:String
+)
+
 data class Asset(val id: String, val title: String, val thumbnailUrl: String)
 
 data class AssetRow(val title: String, val assets: List<Asset>)

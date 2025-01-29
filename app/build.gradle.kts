@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.tv.material)
     implementation(libs.androidx.tv.foundation)
+    implementation(libs.androidx.media3.extractor)
 
     // Meta
     implementation(libs.org.khronos)
@@ -99,6 +100,14 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.runtime)
 
+    //DB
+    implementation(libs.preferences)
+
+    //Retrofit
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
+    implementation(libs.gson)
 
 
 }

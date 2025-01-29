@@ -1,5 +1,6 @@
 package com.techker.tvvr.screens.home
 
+import HomeViewModel
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,28 +25,34 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
+import com.techker.tvvr.TvVrApplication
 import com.techker.tvvr.data.Channel
-import com.techker.tvvr.data.MockData.homePageCarouselItems
-import com.techker.tvvr.data.MockData.sampleMovies
-import com.techker.tvvr.data.Movie
+import com.techker.tvvr.data.Movies
+import com.techker.tvvr.repository.MovieRepository
 import com.techker.tvvr.screens.navigation.NavigationTopBar
 import com.techker.tvvr.widgets.AutoScrollingCarousel
 
@@ -53,127 +60,198 @@ import com.techker.tvvr.widgets.AutoScrollingCarousel
 @Composable
 fun HomeScreen(
     navController: NavController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = viewModel(
+        factory = HomeViewModelFactory((LocalContext.current.applicationContext as TvVrApplication).movieRepository)
+    )
 ) {
-    val lazyListState = rememberLazyListState()
+    val trendingMovies by viewModel.trendingMovies.collectAsState(initial = emptyList())
+    val nowPlayingMovies by viewModel.nowPlayingMovies.collectAsState(initial = emptyList())
+    val upcomingMovies by viewModel.upcomingMovies.collectAsState(initial = emptyList())
+    val isLoading by viewModel.isLoading.collectAsState()
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.DarkGray)
+            .background(Color.Black)
     ) {
-
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 80.dp) // Add padding for the NavigationTopBar
-        ) {
-            // Carousel section
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp)
-                        .padding(top = 16.dp)
-                ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 80.dp)
+            ) {
+                // Auto-scrolling carousel with trending movies
+                item {
                     AutoScrollingCarousel(
-                        items = homePageCarouselItems,
-                        itemWidth = LocalConfiguration.current.screenWidthDp.dp - 32.dp, // Full width minus padding
-                        itemSpacing = 16.dp,
-                        contentPadding = PaddingValues(horizontal = 16.dp)
-                    ) { item ->
+                        items = trendingMovies,
+                        onItemClick = { movie ->
+                            navController.navigate("content/${movie.id}")
+                        }
+                    ) { movie ->
                         CarouselItemContent(
-                            item = item,
-                            onClick = {
-                                navController.navigate("content/${item.id}") {
-                                    launchSingleTop = true
-                                }
-                            }
+                            item = movie,
+                            onClick = { navController.navigate("content/${movie.id}") }
                         )
                     }
                 }
-            }
 
-            // What's New section
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "What's New",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Start,
-                    color = Color.White,
-                    modifier = Modifier.padding(start = 25.dp, bottom = 10.dp)
-                )
+                // Continue Watching section
+                item {
+                    Text(
+                        text = "Continue Watching",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
+                        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
+                    )
+                    ContinueMoviesCarousel(
+                        movies = nowPlayingMovies,
+                        onMovieClick = { movieId ->
+                            navController.navigate("content/$movieId")
+                        }
+                    )
+                }
 
-                MoviesCarousel(
-                    movies = sampleMovies,
-                    onMovieClick = { movieId ->
-                        navController.navigate("content/$movieId")
-                    }
-                )
-            }
+                // Movies section
+                item {
+                    Text(
+                        text = "Movies",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
+                        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
+                    )
+                    MoviesCarousel(
+                        movies = upcomingMovies,
+                        onMovieClick = { movieId ->
+                            navController.navigate("content/$movieId")
+                        }
+                    )
+                }
 
-            // Continue Watching section
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
-                Text(
-                    text = "Continue Watching",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Start,
-                    color = Color.White,
-                    modifier = Modifier.padding(start = 25.dp, bottom = 10.dp)
-                )
+                // TV Channels section
+                item {
+                    Text(
+                        text = "TV Channels",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
+                        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
+                    )
+                    TvChannelsCarousel(
+                        movies = trendingMovies.take(5), // Using trending movies for TV channels
+                        onMovieClick = { movieId ->
+                            navController.navigate("content/$movieId")
+                        }
+                    )
+                }
 
-                ContinueMoviesCarousel(
-                    movies = sampleMovies,
-                    onMovieClick = { movieId ->
-                        navController.navigate("content/$movieId")
-                    }
-                )
-            }
-
-            // Top TV Channels section
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
-                Text(
-                    text = "Top Tv Channels",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Start,
-                    color = Color.White,
-                    modifier = Modifier.padding(start = 25.dp, bottom = 10.dp)
-                )
-
-                TvChannelsCarousel(
-                    movies = sampleMovies,
-                    onMovieClick = { movieId ->
-                        navController.navigate("content/$movieId")
-                    }
-                )
-            }
-
-            // Add some bottom padding
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
+                item {
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
             }
         }
 
-        // Place NavigationTopBar last so it's always on top
         NavigationTopBar(
             navController = navController,
             onAvatarClick = {
-                navController.navigate("profile") {
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
+                navController.navigate("profile")
+            }
+        )
+    }
+}
+
+@Composable
+private fun CategoryRow(
+    title: String,
+    movies: List<Movies>,
+    onMovieClick: (String) -> Unit,
+    isFeatured: Boolean = false
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall,
+            color = Color.White,
+            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+        )
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(movies) { movie ->
+                MovieCard(
+                    movie = movie,
+                    onClick = { onMovieClick(movie.id) },
+                    isFeatured = isFeatured
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MovieCard(
+    movie: Movies,
+    onClick: () -> Unit,
+    isFeatured: Boolean = false
+) {
+    Box(
+        modifier = Modifier
+            .width(if (isFeatured) 300.dp else 200.dp)
+            .height(if (isFeatured) 450.dp else 300.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+    ) {
+        Image(
+            painter = rememberAsyncImagePainter(model = movie.posterUri),
+            contentDescription = movie.name,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Gradient overlay at the bottom
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.7f)
+                        ),
+                        startY = 300f
+                    )
+                )
+        )
+
+        // Movie title at the bottom
+        Text(
+            text = movie.name,
+            style = if (isFeatured) 
+                MaterialTheme.typography.headlineSmall 
+            else 
+                MaterialTheme.typography.bodyLarge,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(8.dp)
         )
     }
 }
 
 @Composable
 fun ContinueMoviesCarousel(
-    movies: List<Movie>,
+    movies: List<Movies>,
     onMovieClick: (String) -> Unit
 ) {
     LazyRow(
@@ -204,7 +282,7 @@ fun ContinueMoviesCarousel(
 
 @Composable
 fun MoviesCarousel(
-    movies: List<Movie>,
+    movies: List<Movies>,
     onMovieClick: (String) -> Unit
 ) {
     val lazyListState = rememberLazyListState()
@@ -255,7 +333,7 @@ fun MoviesCarousel(
 
 @Composable
 fun TvChannelsCarousel(
-    movies: List<Movie>,
+    movies: List<Movies>,
     onMovieClick: (String) -> Unit
 ) {
     LazyRow(
@@ -304,10 +382,9 @@ fun ChannelRow(
     }
 }
 
-
 @Composable
 private fun CarouselItemContent(
-    item: Movie,
+    item: Movies,
     onClick: () -> Unit
 ) {
     Box(
@@ -396,4 +473,17 @@ fun PreviewHome(){
     val navController = rememberNavController() // Create a mock NavController
     NavigationTopBar(navController) {}
     HomeScreen(navController = navController)
+}
+
+// Add ViewModel Factory
+class HomeViewModelFactory(
+    private val repository: MovieRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return HomeViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }

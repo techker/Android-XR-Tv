@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="spatial_panel_width">1488dp</dimen>
+    <dimen name="spatial_panel_height">816dp</dimen>
+    <dimen name="spatial_panel_main_column_width">930dp</dimen>
+    <dimen name="spatial_panel_side_column_width">558dp</dimen>
+    <dimen name="grid_cell_width">250dp</dimen>
+
+    <dimen name="spatial_panel_depth_initial">50dp</dimen>
+    <dimen name="spatial_panel_depth_final">-50dp</dimen>
+</resources>

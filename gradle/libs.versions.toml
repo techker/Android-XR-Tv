@@ -15,6 +15,8 @@ ui = "1.8.0-alpha06"
 compose = "1.0.0-alpha01"
 runtimeVersion = "1.0.0-alpha01"
 scenecore = "1.0.0-alpha01"
+media3 = "1.2.1"
+youtube-player = "12.1.0"
 
 media3-exoplayer = "1.5.1"
 coil-comp = "2.7.0"
@@ -26,8 +28,13 @@ meta-horizon = "71"
 xrCore = "1.0.0-alpha01"
 compose-for-tv = "1.0.0-alpha12"
 tv-material ="1.1.0-alpha01"
-
+sharedPrefs ="1.0.0"
 foundation = "1.5.0"
+
+retrofit = "2.9.0"
+okhttp = "4.11.0"
+gson = "2.10.1"
+
 [libraries]
 
 #AR Core
@@ -58,6 +65,12 @@ androidx-foundation ={ group = "androidx.compose.foundation", name = "foundation
 
 #Extras
 io-coil-compose= { group = "io.coil-kt", name = "coil-compose", version.ref = "coil-comp" }
+preferences= { group = "androidx.datastore", name = "datastore-preferences", version.ref = "sharedPrefs" }
+
+retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 #Android Core
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -72,8 +85,11 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
 #Media 3
-androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3-exoplayer" }
-androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3-exoplayer" }
+androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
+androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
+androidx-media3-youtube = { group = "androidx.media3", name = "media3-exoplayer-youtube", version.ref = "media3" }
+
+androidx-media3-extractor = { group = "androidx.media3", name = "media3-extractor", version.ref = "media3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
